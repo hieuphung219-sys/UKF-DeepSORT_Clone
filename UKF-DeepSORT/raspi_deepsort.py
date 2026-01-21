@@ -114,7 +114,8 @@ def run(output_file, min_confidence, extractor, detector,
 
 		frame_counter += 1
 		out.write(frame)
-		if cv2.waitKey(0) == 27:
+		cv2.imshow('video', frame)
+		if cv2.waitKey(1) == 27:
 			break
 	out.release()
 	cap.release()

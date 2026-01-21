@@ -19,7 +19,7 @@ def gather_sequence_info(sequence_dir, detection_file):
     groundtruth (if available).
 
     Parameters
-    ----------
+    ---------
     sequence_dir : str
         Path to the MOTChallenge sequence directory.
     detection_file : str
