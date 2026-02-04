@@ -6,6 +6,7 @@ import os
 
 import cv2
 import numpy as np
+import time
 
 from application_util import preprocessing
 from application_util import visualization
@@ -163,8 +164,25 @@ def run(sequence_dir, detection_file, output_file, min_confidence,
     tracker = Tracker(metric)
     results = []
 
+    # 1. Khởi tạo biến thời gian bên ngoài hàm callback
+    last_time = time.time()
+
+    output_video_path = "demo_result.avi"
+    writer = None
+    
     def frame_callback(vis, frame_idx):
-        print("Processing frame %05d" % frame_idx)
+        nonlocal last_time # Cho phép hàm con dùng biến của hàm cha
+        
+        # 2. Tính toán FPS hệ thống (System FPS)
+        current_time = time.time()
+        delta_time = current_time - last_time
+        last_time = current_time # Cập nhật lại mốc thời gian
+        
+        fps = 0
+        if delta_time > 0:
+            fps = 1.0 / delta_time
+            
+        print("Processing frame %05d | System FPS: %.2f" % (frame_idx, fps))
 
         # Load image and generate detections.
         detections = create_detections(
@@ -180,18 +198,53 @@ def run(sequence_dir, detection_file, output_file, min_confidence,
 
         # Update tracker.
         tracker.predict()
+        tracker.update(detections)
 
         # Visualize the predictions
         if display:
             image = cv2.imread(
-                seq_info["image_filenames"][frame_idx], cv2.IMREAD_COLOR)
+            seq_info["image_filenames"][frame_idx], cv2.IMREAD_COLOR)
+
+            # --- PHẦN MỚI: Tự vẽ Bounding Box và ID bằng OpenCV (cho nhanh và đẹp) ---
+            for track in tracker.tracks:
+                # Chỉ vẽ những track đã xác nhận (Confirmed) và vừa mới cập nhật
+                if not track.is_confirmed() or track.time_since_update > 1:
+                    continue
+            
+                # Lấy tọa độ hộp (x, y, w, h)
+                tlwh = track.to_tlwh()
+                x, y, w, h = int(tlwh[0]), int(tlwh[1]), int(tlwh[2]), int(tlwh[3])
+            
+                # 1. Vẽ hình chữ nhật quanh người (Màu xanh lá: 0, 255, 0)
+                cv2.rectangle(image, (x, y), (x + w, y + h), (0, 255, 0), 2)
+            
+                # 2. Vẽ ID của người đó lên đầu hộp
+                label = f"ID: {track.track_id}"
+                cv2.putText(image, label, (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 
+                            0.9, (0, 255, 0), 2)
+
+            # --- PHẦN MỚI: Ghi ảnh đã vẽ vào file video ---
+            nonlocal writer # Gọi biến writer ở bên ngoài vào để dùng
+        
+            # Nếu writer chưa được khởi tạo (ở frame đầu tiên) thì khởi tạo nó
+            if writer is None:
+                fourcc = cv2.VideoWriter_fourcc(*'MJPG') # Chuẩn nén video
+                # Tạo file video với tốc độ 30 FPS (Frames Per Second)
+                writer = cv2.VideoWriter(output_video_path, fourcc, 30, 
+                                         (image.shape[1], image.shape[0]))
+        
+            # Ghi khung hình hiện tại vào video
+            writer.write(image)
+            # ---------------------------------------------
+
+            # (Tùy chọn) Vẫn hiển thị lên màn hình để bạn biết chương trình đang chạy
+            # Nếu muốn tắt hẳn cửa sổ để chạy ngầm cho nhanh, bạn comment dòng dưới lại
+            cv2.imshow("Preview (Processing...)", image) 
+            cv2.waitKey(1)
+            # Đưa ảnh đã có chữ FPS vào visualizer
             vis.set_image(image.copy())
+            
             vis.draw_predictions(tracker.tracks)
-
-        tracker.update(detections)
-
-        # Update visualization.
-        if display:
             vis.draw_detections(detections)
             vis.draw_trackers(tracker.tracks)
 
@@ -209,7 +262,9 @@ def run(sequence_dir, detection_file, output_file, min_confidence,
     else:
         visualizer = visualization.NoVisualization(seq_info)
     visualizer.run(frame_callback)
-
+    if writer is not None:
+        writer.release()
+        print(f"Xong! Video da duoc luu tai: {output_video_path}")
     # Store results.
     f = open(output_file, 'w')
     for row in results:
