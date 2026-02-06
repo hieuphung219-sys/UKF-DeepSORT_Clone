@@ -170,6 +170,13 @@ def run(sequence_dir, detection_file, output_file, min_confidence,
     output_video_path = "demo_result.avi"
     writer = None
     
+    def get_color(idx):
+        # Dùng toán học để băm (hash) ID thành 3 giá trị màu R, G, B
+        # Các số 37, 17, 29 là số nguyên tố để giúp màu không bị trùng lặp quá nhiều
+        idx = idx * 3
+        color = ((37 * idx) % 255, (17 * idx) % 255, (29 * idx) % 255)
+        return color
+
     def frame_callback(vis, frame_idx):
         nonlocal last_time # Cho phép hàm con dùng biến của hàm cha
         
@@ -203,25 +210,31 @@ def run(sequence_dir, detection_file, output_file, min_confidence,
         # Visualize the predictions
         if display:
             image = cv2.imread(
-            seq_info["image_filenames"][frame_idx], cv2.IMREAD_COLOR)
+                seq_info["image_filenames"][frame_idx], cv2.IMREAD_COLOR)
 
-            # --- PHẦN MỚI: Tự vẽ Bounding Box và ID bằng OpenCV (cho nhanh và đẹp) ---
             for track in tracker.tracks:
-                # Chỉ vẽ những track đã xác nhận (Confirmed) và vừa mới cập nhật
                 if not track.is_confirmed() or track.time_since_update > 1:
                     continue
             
-                # Lấy tọa độ hộp (x, y, w, h)
                 tlwh = track.to_tlwh()
                 x, y, w, h = int(tlwh[0]), int(tlwh[1]), int(tlwh[2]), int(tlwh[3])
             
-                # 1. Vẽ hình chữ nhật quanh người (Màu xanh lá: 0, 255, 0)
-                cv2.rectangle(image, (x, y), (x + w, y + h), (0, 255, 0), 2)
+            # 1. Lấy màu riêng cho ID này
+                color = get_color(track.track_id)
             
-                # 2. Vẽ ID của người đó lên đầu hộp
+            # 2. Vẽ hình chữ nhật với màu vừa lấy
+                cv2.rectangle(image, (x, y), (x + w, y + h), color, 2)
+            
+            # 3. Vẽ nền cho chữ ID (để dễ đọc hơn)
                 label = f"ID: {track.track_id}"
-                cv2.putText(image, label, (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 
-                            0.9, (0, 255, 0), 2)
+                (text_width, text_height), _ = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, 0.6, 1)
+            
+            # Vẽ hình chữ nhật đặc làm nền cho chữ
+                cv2.rectangle(image, (x, y - 20), (x + text_width, y), color, -1)
+            
+            # Vẽ chữ màu trắng (255, 255, 255) lên trên nền màu
+                cv2.putText(image, label, (x, y - 5), cv2.FONT_HERSHEY_SIMPLEX, 
+                            0.6, (255, 255, 255), 1)
 
             # --- PHẦN MỚI: Ghi ảnh đã vẽ vào file video ---
             nonlocal writer # Gọi biến writer ở bên ngoài vào để dùng
