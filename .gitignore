@@ -1,0 +1,70 @@
+# =========================
+# Python
+# =========================
+__pycache__/
+*.py[cod]
+*$py.class
+
+# C extensions
+*.so
+
+# =========================
+# Virtual Environment
+# =========================
+venv/
+venv1/
+ENV/
+env/
+
+# =========================
+# Distribution / Build
+# =========================
+build/
+dist/
+eggs/
+.eggs/
+*.egg-info/
+*.egg
+.installed.cfg
+
+# =========================
+# Logs & Reports
+# =========================
+*.log
+htmlcov/
+.tox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+
+# =========================
+# Jupyter
+# =========================
+.ipynb_checkpoints/
+
+# =========================
+# IDE
+# =========================
+.vscode/
+.idea/
+
+# =========================
+# Dataset & Outputs (QUAN TRỌNG)
+# =========================
+datasets/
+MOT16/
+detections/
+*.png
+*.jpg
+*.jpeg
+*.avi
+*.mp4
+*.npy
+
+# =========================
+# Environment files
+# =========================
+.env
+.python-version

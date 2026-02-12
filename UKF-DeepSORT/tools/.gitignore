@@ -1,0 +1,16 @@
+# Dataset
+datasets/
+
+# Media files
+*.png
+*.jpg
+*.jpeg
+*.avi
+*.mp4
+*.npy
+
+# Python
+__pycache__/
+*.pyc
+venv/
+venv1/
