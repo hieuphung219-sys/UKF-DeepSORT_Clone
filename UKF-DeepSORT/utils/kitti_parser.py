@@ -47,14 +47,14 @@ def read_kitti_tracking_annotation(file_path):
 if __name__ == "__main__":
     # Thay thế bằng đường dẫn thực tế đến một file ground truth đã tải về
     # Ví dụ: "data/kitti/training/label_02/0000.txt"
-    sample_file_path = "data/kitty_tracking/training/label_02/0000.txt" 
+    sample_file_path = "data/kitti_tracking/training/label_02/0000.txt" 
     
     # Chỉ chạy test nếu file tồn tại để tránh lỗi
     if os.path.exists(sample_file_path):
         parsed_data = read_kitti_tracking_annotation(sample_file_path)
         if parsed_data:
             print("Dữ liệu đối tượng đầu tiên:", parsed_data[10])
-else:
+    else:
         # Thêm thông báo lỗi rõ ràng thay vì im lặng
         print(f"LỖI: Không tìm thấy file test tại: {sample_file_path}")
         print(f"Gợi ý: Hãy chắc chắn bạn đã tạo file 'sample_0000.txt' trong thư mục 'data'.")
