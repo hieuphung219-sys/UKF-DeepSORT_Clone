@@ -30,7 +30,7 @@ if __name__ == "__main__":
     
     # 1. Tạo một dòng dữ liệu giả lập (mock data) trích xuất từ KITTI
     # Định dạng: frame track_id type truncated occluded alpha xmin ymin xmax ymax ...
-    sample_kitti_line = "0 0 Car 0 0 -1.79 296.74 161.75 455.22 292.37 2.0 1.8 4.4 -4.5 1.8 13.4 -2.1"
+    sample_kitti_line = "0 -1 DontCare -1 -1 -10.000000 219.310000 188.490000 245.500000 218.560000 -1000.000000 -1000.000000 -1000.000000 -10.000000 -1.000000 -1.000000 -1.000000"
     
     # 2. Gọi hàm
     result = extract_bbox_xywh(sample_kitti_line)
