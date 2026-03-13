@@ -18,7 +18,7 @@ if ret:
     # 3. Chạy YOLO dự đoán trên ảnh tĩnh này
     # Tham số save=True sẽ tự động vẽ Bounding Box và lưu thành file ảnh mới
     # Tham số show=True sẽ hiển thị ảnh kết quả lên màn hình
-    results = model.predict(source=frame, save=True, show=True)
+    results = model.predict(source=frame, conf=0.5, save=True, show=True)
     
     print("Hoàn tất! Hãy kiểm tra thư mục 'runs/detect/predict' trong dự án để xem ảnh kết quả.")
 else:
