@@ -10,6 +10,6 @@ print("Đang chạy YOLOv8 qua toàn bộ video. Quá trình này sẽ mất m�
 
 # Chạy dự đoán và lọc chính xác 6 class bạn đã chọn
 # Tham số save=True sẽ tự động render một video mới có vẽ sẵn các hộp Bounding Box
-results = model.predict(source=video_path, classes=[0, 1, 2, 3, 5, 7], conf=0.5, save=True)
+results = model.predict(source=video_path, classes=[0, 1, 2, 3, 5, 7], conf=0.5, iou=0.4, save=True)
 
 print("Hoàn tất! Video kết quả đã được lưu trong thư mục: runs/detect/predict/")
