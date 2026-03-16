@@ -68,3 +68,5 @@ detections/
 # =========================
 .env
 .python-version
+data/
+*.pth
