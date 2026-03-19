@@ -70,3 +70,4 @@ detections/
 .python-version
 data/
 *.pth
+*.pt
