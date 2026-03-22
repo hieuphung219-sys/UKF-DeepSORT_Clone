@@ -177,9 +177,38 @@ class TF1ImageEncoder(BaseEncoder):
         return self.normalize(out)
 
 def create_box_encoder(model_filename, batch_size=32):
+    # 1. NẾU LÀ MODEL PYTORCH (.pt, .pth)
+    if model_filename.endswith(".pt") or model_filename.endswith(".pth"):
+        # Import class trích xuất PyTorch từ file bạn vừa cung cấp
+        from pytorch_feature_extractor import PyTorchFeatureExtractor
+        pytorch_encoder = PyTorchFeatureExtractor(model_filename)
+        
+        def encoder(image, boxes, profiler=None):
+            features = []
+            if profiler: profiler.tic()
+            
+            for box in boxes:
+                # Kích thước chuẩn cho mạng VeRi thường là 256x256
+                patch = extract_image_patch(image, box, (256, 256))
+                # Nếu không cắt được ảnh (box lỗi), tạo ma trận 0
+                if patch is None:
+                    patch = np.zeros((256, 256, 3), dtype=np.uint8)
+                
+                # Trích xuất đặc trưng từng xe
+                feat = pytorch_encoder.extract_feature(patch)
+                features.append(feat)
+                
+            if profiler: profiler.toc('inference_time')
+            return np.array(features)
+            
+        return encoder
+
+    # 2. NẾU LÀ MODEL TENSORFLOW CŨ (.pb, .tflite) - Giữ nguyên logic cũ
     if model_filename.endswith(".tflite"):
+        from generate_detections import TFLiteImageEncoder # Đảm bảo import đúng
         encoder_engine = TFLiteImageEncoder(model_filename)
     else:
+        from generate_detections import TF1ImageEncoder # Đảm bảo import đúng
         encoder_engine = TF1ImageEncoder(model_filename)
         
     image_shape = encoder_engine.image_shape
@@ -187,18 +216,14 @@ def create_box_encoder(model_filename, batch_size=32):
     def encoder(image, boxes, profiler=None):
         image_patches = []
         if profiler: profiler.tic()
-        
-        # Pre-processing Loop
         for box in boxes:
             patch = extract_image_patch(image, box, image_shape[:2])
             if patch is None:
                 patch = np.random.uniform(0., 255., image_shape).astype(np.uint8)
             image_patches.append(patch)
         image_patches = np.asarray(image_patches)
-        
         if profiler: profiler.toc('preproc_time')
 
-        # Inference
         if profiler: profiler.tic()
         features = encoder_engine(image_patches, batch_size) if hasattr(encoder_engine, 'session') else encoder_engine(image_patches)
         if profiler: profiler.toc('inference_time')
