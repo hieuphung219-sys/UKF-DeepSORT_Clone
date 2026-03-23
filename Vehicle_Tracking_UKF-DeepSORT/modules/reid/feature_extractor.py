@@ -6,7 +6,7 @@ from PIL import Image
 
 # Chỉ định đường dẫn tới thư mục fast-reid vừa clone
 current_dir = os.path.dirname(os.path.abspath(__file__))
-fast_reid_path = os.path.join(current_dir, '..', 'fast-reid')
+fast_reid_path = os.path.join(current_dir, 'fast-reid')
 sys.path.insert(0, fast_reid_path)
 
 # Import module cấu trúc mạng từ Fast-ReID
