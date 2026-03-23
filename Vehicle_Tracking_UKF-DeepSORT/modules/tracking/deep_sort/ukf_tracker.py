@@ -74,12 +74,16 @@ class UKF_Tracker:
         ukf.x = mean
         ukf.P = covariance
         
+        if predicted_sigma_points is not None:
+            ukf.sigmas_f = predicted_sigma_points
+
         # [Task 50] Update ma trận R theo BBox thực tế
         height = measurement[3]
         std_R = [0.05 * height, 0.05 * height, 1e-1, 0.1 * height]
         ukf.R = np.diag(np.square(std_R))
         
         ukf.update(measurement[:4])
+        print(f"Vận tốc vx, vy sau update: {ukf.x[4]:.2f}, {ukf.x[5]:.2f}")
         return ukf.x, ukf.P
 
     def gating_distance(self, mean, covariance, measurements, height, predicted_sigma_points=None, only_position=False):
