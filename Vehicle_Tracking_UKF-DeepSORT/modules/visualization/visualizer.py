@@ -1,20 +1,21 @@
 import cv2
 import time
 import numpy as np
+from collections import defaultdict
 
 class Visualizer:
-    def __init__(self, output_path: str = "demo_result.avi", fps: int = 30):
-        """
-        Class chuyên trách việc vẽ Bounding Box, ID và xuất video.
-        Tuân thủ Single Responsibility Principle.
-        """
+    def __init__(self, output_path: str = "output_test.mp4", fps: int = 30):
         self.output_path = output_path
         self.target_fps = fps
         self.writer = None
         self.last_time = time.time()
         
-        # Cache màu sắc để tăng tốc độ, không phải băm (hash) lại liên tục
         self.color_cache = {}
+        
+        # [Task 75] Thêm dictionary để lưu trữ lịch sử tâm BBox (dải đuôi)
+        # Giới hạn độ dài đuôi là 30 frames để tránh rối mắt và tràn RAM
+        self.track_history = defaultdict(lambda: [])
+        self.max_history_len = 30
 
     def _get_color(self, track_id: int) -> tuple:
         if track_id not in self.color_cache:
@@ -23,26 +24,22 @@ class Visualizer:
         return self.color_cache[track_id]
 
     def draw_and_save(self, frame: np.ndarray, tracks: list, frame_idx: int) -> np.ndarray:
-        """
-        Tính FPS, vẽ Bounding Box, hiển thị ID và ghi frame vào video.
-        """
-        # 1. Tính System FPS
         current_time = time.time()
         delta_time = current_time - self.last_time
         self.last_time = current_time
         fps_sys = 1.0 / delta_time if delta_time > 0 else 0
         
+        # In log ra terminal để theo dõi tiến độ
         print(f"Processing frame {frame_idx:05d} | System FPS: {fps_sys:.2f}")
 
-        # 2. Khởi tạo VideoWriter (chỉ chạy 1 lần ở frame đầu tiên)
         if self.writer is None:
             h, w = frame.shape[:2]
-            fourcc = cv2.VideoWriter_fourcc(*'MJPG')
+            # Sử dụng mp4v cho định dạng .mp4
+            fourcc = cv2.VideoWriter_fourcc(*'mp4v')
             self.writer = cv2.VideoWriter(self.output_path, fourcc, self.target_fps, (w, h))
 
-        # 3. Vẽ dữ liệu của từng track lên frame
         for track in tracks:
-            # Chỉ vẽ những track đã được xác nhận và mới được cập nhật
+            # Bỏ qua các track chưa confirmed hoặc vừa bị mất dấu (missed)
             if not track.is_confirmed() or track.time_since_update > 1:
                 continue
             
@@ -50,20 +47,33 @@ class Visualizer:
             color = self._get_color(track.track_id)
             label = f"ID: {track.track_id}"
 
-            # Vẽ Box
+            # Tính toán tọa độ tâm BBox
+            center_x = int(x + w_box / 2)
+            center_y = int(y + h_box) # Lấy tâm đáy (chỗ bánh xe) để vẽ quỹ đạo đẹp hơn
+
+            # Lưu vào lịch sử và giới hạn độ dài
+            self.track_history[track.track_id].append((center_x, center_y))
+            if len(self.track_history[track.track_id]) > self.max_history_len:
+                self.track_history[track.track_id].pop(0)
+
+            # --- VẼ TRỰC QUAN ---
+            # 1. Vẽ dải đuôi (Trajectory)
+            history_points = np.array(self.track_history[track.track_id], dtype=np.int32).reshape((-1, 1, 2))
+            cv2.polylines(frame, [history_points], isClosed=False, color=color, thickness=2)
+
+            # 2. Vẽ Bounding Box
             cv2.rectangle(frame, (x, y), (x + w_box, y + h_box), color, 2)
             
-            # Vẽ Label nền
+            # 3. Vẽ Label (ID)
             (text_w, text_h), _ = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, 0.6, 1)
             cv2.rectangle(frame, (x, y - 20), (x + text_w, y), color, -1)
             cv2.putText(frame, label, (x, y - 5), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 1)
 
-        # 4. Ghi frame vào video
+        # Ghi frame vào file video output
         self.writer.write(frame)
         return frame
 
     def release(self):
-        """Giải phóng tài nguyên VideoWriter khi kết thúc."""
         if self.writer is not None:
             self.writer.release()
-            print(f"Xong! Video đã được lưu tại: {self.output_path}")
+            print(f"\n[HOÀN TẤT] Video kết quả đã được lưu tại: {self.output_path}")
