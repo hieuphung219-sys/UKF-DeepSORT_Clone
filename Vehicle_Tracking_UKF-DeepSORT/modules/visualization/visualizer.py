@@ -47,20 +47,6 @@ class Visualizer:
             color = self._get_color(track.track_id)
             label = f"ID: {track.track_id}"
 
-            # Tính toán tọa độ tâm BBox
-            center_x = int(x + w_box / 2)
-            center_y = int(y + h_box) # Lấy tâm đáy (chỗ bánh xe) để vẽ quỹ đạo đẹp hơn
-
-            # Lưu vào lịch sử và giới hạn độ dài
-            self.track_history[track.track_id].append((center_x, center_y))
-            if len(self.track_history[track.track_id]) > self.max_history_len:
-                self.track_history[track.track_id].pop(0)
-
-            # --- VẼ TRỰC QUAN ---
-            # 1. Vẽ dải đuôi (Trajectory)
-            history_points = np.array(self.track_history[track.track_id], dtype=np.int32).reshape((-1, 1, 2))
-            cv2.polylines(frame, [history_points], isClosed=False, color=color, thickness=2)
-
             # 2. Vẽ Bounding Box
             cv2.rectangle(frame, (x, y), (x + w_box, y + h_box), color, 2)
             

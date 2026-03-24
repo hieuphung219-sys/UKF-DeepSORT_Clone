@@ -41,6 +41,15 @@ def run_pipeline(video_path, yolo_weights, reid_weights, output_path):
         # detections trả về dạng [x_min, y_min, w, h, conf, class_id]
         raw_detections = detector.detect(frame)
         
+        filtered_detections = []
+        for det in raw_detections:
+            x, y, w, h, conf, cls_id = det
+            # Chỉ giữ lại bbox nếu chiều rộng > 20 và chiều cao > 20 pixel (có thể tự chỉnh số này)
+            if w > 20 and h > 20: 
+                filtered_detections.append(det)
+
+        raw_detections = filtered_detections
+
         # --- GIAI ĐOẠN 3: RE-ID FEATURE EXTRACTION ---
         # Lọc ra tọa độ bbox để cắt ảnh
         bboxes = [det[:4] for det in raw_detections]
