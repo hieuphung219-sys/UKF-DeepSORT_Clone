@@ -72,3 +72,6 @@ data/
 *.pth
 *.pt
 archieve/
+count_gt.py
+visualize_mot_gt.py
+results.txt

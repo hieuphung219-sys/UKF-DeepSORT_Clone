@@ -7,9 +7,22 @@ from filterpy.kalman import UnscentedKalmanFilter, MerweScaledSigmaPoints
 # ==========================================
 
 def fx(state, dt):
-    """ Hàm chuyển trạng thái (Non-linear State Transition) """
-    x, y, a, h, vx, vy, va, vh = state
-    return np.array([x + vx*dt, y + vy*dt, a + va*dt, h + vh*dt, vx, vy, va, vh])
+    """ Hàm chuyển trạng thái CTRV (Constant Turn Rate and Velocity) """
+    x, y, a, h, v, yaw, omega, vh = state
+    
+    # Tránh lỗi chia cho 0 khi xe đi thẳng (tốc độ xoay omega ~ 0)
+    if abs(omega) > 1e-4:
+        x_next = x + (v / omega) * (np.sin(yaw + omega * dt) - np.sin(yaw))
+        y_next = y + (v / omega) * (-np.cos(yaw + omega * dt) + np.cos(yaw))
+    else:
+        x_next = x + v * np.cos(yaw) * dt
+        y_next = y + v * np.sin(yaw) * dt
+        
+    yaw_next = yaw + omega * dt
+    a_next = a
+    h_next = h + vh * dt
+    
+    return np.array([x_next, y_next, a_next, h_next, v, yaw_next, omega, vh])
 
 def hx(state):
     """ Hàm đo lường ánh xạ từ không gian trạng thái 8D ra 4D (YOLO) """
@@ -35,13 +48,19 @@ class UKF_Tracker:
         self.Q = np.diag(np.square(std_Q))
 
     def initiate(self, measurement):
-        """ Khởi tạo Track mới """
-        mean = np.r_[measurement, np.zeros(4)]
+        """ Khởi tạo Track mới với mô hình CTRV """
+        # Khởi tạo vector 8D: [x, y, a, h, v=0, yaw=0, omega=0, vh=0]
+        mean = np.array([measurement[0], measurement[1], measurement[2], measurement[3], 0.0, 0.0, 0.0, 0.0])
         
-        # [Task 48] Khởi tạo ma trận Hiệp phương sai sai số (P)
         std_P = [
-            2 * 0.05 * measurement[3], 2 * 0.05 * measurement[3], 1e-2, 2 * 0.05 * measurement[3],
-            10 * 0.01 * measurement[3], 10 * 0.01 * measurement[3], 1e-5, 10 * 0.01 * measurement[3]
+            2 * 0.05 * measurement[3], # x
+            2 * 0.05 * measurement[3], # y
+            1e-2,                      # a
+            2 * 0.05 * measurement[3], # h
+            10 * 0.01 * measurement[3],# v (vận tốc)
+            np.pi / 4,                 # yaw (bắt đầu có thể lệch 45 độ)
+            1e-2,                      # omega (tốc độ xoay)
+            10 * 0.01 * measurement[3] # vh
         ]
         covariance = np.diag(np.square(std_P))
         return mean, covariance

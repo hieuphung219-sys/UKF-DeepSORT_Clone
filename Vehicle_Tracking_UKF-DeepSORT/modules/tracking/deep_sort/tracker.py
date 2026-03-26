@@ -126,3 +126,7 @@ class Tracker:
             mean, covariance, self._next_id, self.n_init, self.max_age,
             detection.feature))
         self._next_id += 1
+
+    def camera_update(self, H):
+        for track in self.tracks:
+            track.camera_update(H)

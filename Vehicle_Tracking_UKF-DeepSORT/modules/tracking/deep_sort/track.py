@@ -47,11 +47,26 @@ class Track:
         self.time_since_update += 1
 
     def update(self, kf, detection):
-        # [UKF Specific] Cập nhật cũng khác một chút
+        # [UKF Specific] Cập nhật tọa độ
         self.mean, self.covariance = kf.update(
             self.mean, self.covariance, detection.to_xyah(), self.predicted_sigma_points)
         
-        self.features.append(detection.feature)
+        # --- THÊM LOGIC FEATURE EMA TẠI ĐÂY ---
+        alpha = 0.9 # Hệ số làm mượt
+        if len(self.features) > 0:
+            # Lấy feature hiện tại của detection và feature cũ nhất của track
+            current_feat = detection.feature
+            old_feat = self.features[-1]
+            
+            # Cập nhật theo công thức Trung bình động hàm mũ
+            smoothed_feat = alpha * current_feat + (1 - alpha) * old_feat
+            
+            # Chuẩn hóa L2 (Bắt buộc để Cosine Distance hoạt động đúng)
+            smoothed_feat /= np.linalg.norm(smoothed_feat)
+            self.features.append(smoothed_feat)
+        else:
+            self.features.append(detection.feature)
+        # --------------------------------------
 
         self.hits += 1
         self.time_since_update = 0
@@ -72,3 +87,14 @@ class Track:
 
     def is_deleted(self):
         return self.state == TrackState.Deleted
+    
+    def camera_update(self, H):
+        """ Bù trừ chuyển động camera bằng ma trận Affine H (2x3) """
+        x, y = self.mean[0], self.mean[1]
+        
+        # Dịch chuyển tọa độ (x, y) theo ma trận chuyển đổi bối cảnh
+        new_x = H[0, 0] * x + H[0, 1] * y + H[0, 2]
+        new_y = H[1, 0] * x + H[1, 1] * y + H[1, 2]
+        
+        self.mean[0] = new_x
+        self.mean[1] = new_y
