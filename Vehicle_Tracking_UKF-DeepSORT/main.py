@@ -16,7 +16,7 @@ from modules.tracking.application_util.cmc import CameraMotionCompensator
 def run_pipeline(video_path, yolo_weights, reid_weights, output_path, txt_output):
     print("1. Đang tải mô hình YOLOv8...")
     # Lọc nhiễu (Confidence threshold, kích thước) đã được xử lý bên trong VehicleDetector
-    detector = VehicleDetector(model_path=yolo_weights, conf_thresh=0.5)
+    detector = VehicleDetector(model_path=yolo_weights, conf_thresh=0.7)
 
     print("2. Đang tải mô hình Re-ID (VeRi)...")
     extractor = PyTorchFeatureExtractor(model_path=reid_weights)
