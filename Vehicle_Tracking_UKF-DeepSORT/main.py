@@ -22,7 +22,7 @@ def run_pipeline(video_path, yolo_weights, reid_weights, output_path, txt_output
     extractor = PyTorchFeatureExtractor(model_path=reid_weights)
 
     print("3. Đang khởi tạo UKF-DeepSORT (CTRV Model)...")
-    metric = NearestNeighborDistanceMetric("cosine", matching_threshold=0.2, budget=100)
+    metric = NearestNeighborDistanceMetric("cosine", matching_threshold=0.5, budget=100)
     tracker = Tracker(metric, max_age=30, n_init=3, lambda_weight=0.5)
 
     print("4. Đang khởi tạo Camera Motion Compensator...")

@@ -7,7 +7,7 @@ from . import iou_matching
 from .track import Track
 
 class Tracker:
-    def __init__(self, metric, max_iou_distance=0.7, max_age=30, n_init=3, lambda_weight=0.5):
+    def __init__(self, metric, max_iou_distance=0.9, max_age=30, n_init=3, lambda_weight=0.5):
         self.metric = metric
         self.max_iou_distance = max_iou_distance
         
@@ -90,7 +90,7 @@ class Tracker:
             
             # [Task 63] 4. Rào cản cổng (Gating Mechanism) bằng ngưỡng Chi-square
             cost_matrix = linear_assignment.gate_cost_matrix(
-                self.kf, cost_matrix, tracks, dets, track_indices, detection_indices)
+                self.kf, cost_matrix, tracks, dets, track_indices, detection_indices, only_position=True)
             return cost_matrix
 
         confirmed_tracks = [i for i, t in enumerate(self.tracks) if t.is_confirmed()]
@@ -102,12 +102,15 @@ class Tracker:
                 combined_gated_metric, self.metric.matching_threshold, self.max_age,
                 self.tracks, detections, confirmed_tracks)
 
+        MAX_IOU_WAIT = 3 
+        
         iou_track_candidates = unconfirmed_tracks + [
             k for k in unmatched_tracks_a if
-            self.tracks[k].time_since_update == 1]
+            self.tracks[k].time_since_update <= MAX_IOU_WAIT]
+            
         unmatched_tracks_a = [
             k for k in unmatched_tracks_a if
-            self.tracks[k].time_since_update != 1]
+            self.tracks[k].time_since_update > MAX_IOU_WAIT]
             
         # So khớp những phần còn lại bằng IoU (Intersection over Union)
         matches_b, unmatched_tracks_b, unmatched_detections = \
