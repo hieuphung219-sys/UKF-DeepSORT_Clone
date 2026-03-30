@@ -4,14 +4,14 @@ import argparse
 # Import các modules tự xây dựng
 from modules.detection.vehicle_detector import VehicleDetector
 from modules.reid.feature_extractor import PyTorchFeatureExtractor
-from modules.tracking.application_util.preprocessing import extract_image_patches
-from modules.tracking.deep_sort.detection import Detection
-from modules.tracking.deep_sort.tracker import Tracker
-from modules.tracking.deep_sort.nn_matching import NearestNeighborDistanceMetric
+from application_util.preprocessing import extract_image_patches
+from deep_sort.detection import Detection
+from deep_sort.tracker import Tracker
+from deep_sort.nn_matching import NearestNeighborDistanceMetric
 from modules.visualization.visualizer import Visualizer
 
 # Import class CMC vừa tạo
-from modules.tracking.application_util.cmc import CameraMotionCompensator 
+from application_util.cmc import CameraMotionCompensator 
 
 def run_pipeline(video_path, yolo_weights, reid_weights, output_path, txt_output):
     print("1. Đang tải mô hình YOLOv8...")
