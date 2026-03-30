@@ -23,7 +23,7 @@ def run_pipeline(video_path, yolo_weights, reid_weights, output_path, txt_output
 
     print("3. Đang khởi tạo UKF-DeepSORT (CTRV Model)...")
     metric = NearestNeighborDistanceMetric("cosine", matching_threshold=0.5, budget=100)
-    tracker = Tracker(metric, max_age=30, n_init=3, lambda_weight=0.5)
+    tracker = Tracker(metric, max_age=30, n_init=3, lambda_weight=0.7)
 
     print("4. Đang khởi tạo Camera Motion Compensator...")
     cmc = CameraMotionCompensator()
